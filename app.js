@@ -203,6 +203,57 @@ function saveCholi(e) {
     renderInventory();
 }
 
+function handleCholiImageFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const maxDim = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height && width > maxDim) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+            } else if (height > maxDim) {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            document.getElementById('choliImage').value = compressedDataUrl;
+            updateCholiImagePreview(compressedDataUrl);
+            showToast('Photo uploaded!', 'success');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function selectPresetImage(url) {
+    document.getElementById('choliImage').value = url;
+    updateCholiImagePreview(url);
+}
+
+function updateCholiImagePreview(url) {
+    const preview = document.getElementById('choliPreviewBox');
+    if (!preview) return;
+    if (url && url.trim() !== '') {
+        preview.innerHTML = `<img src="${url}" alt="Preview" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+    } else {
+        preview.innerHTML = `<div style="text-align:center;"><i class="fas fa-camera" style="font-size:1.8rem;color:var(--text-light);opacity:0.6;"></i><div style="font-size:0.75rem;color:var(--text-light);margin-top:4px;">No photo selected</div></div>`;
+    }
+}
+
 function editCholi(id) {
     const cholis = DB.get('cholis');
     const choli = cholis.find(c => c.id == id);
@@ -218,6 +269,9 @@ function editCholi(id) {
     document.getElementById('choliDeposit').value = choli.deposit || 0;
     document.getElementById('choliDesc').value = choli.description || '';
     document.getElementById('choliImage').value = choli.image || '';
+    updateCholiImagePreview(choli.image || '');
+    openModal('addCholiModal');
+}
     openModal('addCholiModal');
 }
 
@@ -278,33 +332,40 @@ function renderInventory() {
     grid.innerHTML = filtered.map(c => {
         const status = getCholiStatus(c.id);
         const imageHtml = c.image
-            ? `<img src="${c.image}" alt="${c.name}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-vest placeholder-icon\\'></i>'">`
+            ? `<img src="${c.image}" alt="${c.name}" loading="lazy" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/d/d1/Ethnic_wear_for_women_Blue_Lehenga.png'">`
             : `<i class="fas fa-vest placeholder-icon"></i>`;
 
         return `
         <div class="choli-card">
             <div class="choli-image">
                 ${imageHtml}
-                <span class="choli-status-badge badge-${status}">${status}</span>
+                <span class="choli-price-badge">₹${c.price.toLocaleString('en-IN')}<small>/event</small></span>
+                <span class="choli-status-badge badge-${status}">
+                    <i class="fas fa-${status === 'available' ? 'circle-check' : 'clock'}"></i> ${status}
+                </span>
             </div>
             <div class="choli-details">
+                <div class="choli-category-pill">${c.category || 'Ethnic Wear'}</div>
                 <div class="choli-name">${c.name}</div>
+                ${c.description ? `<p class="choli-desc-snippet">${c.description}</p>` : ''}
                 <div class="choli-meta">
-                    <span class="meta-tag">${c.color}</span>
-                    <span class="meta-tag">Size: ${c.size}</span>
-                    <span class="meta-tag">${c.category}</span>
+                    <span class="meta-tag"><i class="fas fa-palette"></i> ${c.color}</span>
+                    <span class="meta-tag"><i class="fas fa-ruler-horizontal"></i> ${c.size}</span>
+                    <span class="meta-tag"><i class="fas fa-shield-halved"></i> Dep: ₹${c.deposit || 0}</span>
                 </div>
-                <div class="choli-price">₹${c.price.toLocaleString('en-IN')}</div>
-                <div class="choli-actions">
-                    <button class="btn btn-primary btn-sm" onclick="quickBook(${c.id})" ${status === 'rented' ? 'disabled style="opacity:0.5"' : ''}>
-                        <i class="fas fa-bookmark"></i> Book
-                    </button>
-                    <button class="btn btn-secondary btn-icon" onclick="editCholi(${c.id})" title="Edit">
-                        <i class="fas fa-pen"></i>
-                    </button>
-                    <button class="btn btn-secondary btn-icon" onclick="deleteCholi(${c.id})" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <div class="choli-card-footer">
+                    <div class="choli-price">₹${c.price.toLocaleString('en-IN')} <small>rent</small></div>
+                    <div class="choli-actions">
+                        <button class="btn btn-primary btn-sm" onclick="quickBook(${c.id})" ${status === 'rented' ? 'disabled style="opacity:0.5"' : ''}>
+                            <i class="fas fa-calendar-plus"></i> Book
+                        </button>
+                        <button class="btn btn-secondary btn-icon" onclick="editCholi(${c.id})" title="Edit Choli">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button class="btn btn-secondary btn-icon" onclick="deleteCholi(${c.id})" title="Delete Choli">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>`;
@@ -383,15 +444,28 @@ function checkAvailability() {
                 const conflict = !available ? getConflictingBooking(c.id, eventDate) : null;
                 const conflictCustomer = conflict ? customers.find(cu => cu.id == conflict.customerId) : null;
 
+                const imgThumb = c.image
+                    ? `<img src="${c.image}" alt="${c.name}" class="avail-card-thumb" onerror="this.style.display='none'">`
+                    : '';
+
                 return `
                 <div class="avail-card ${available ? '' : 'unavailable'}">
-                    <div class="avail-name">${c.name}</div>
-                    <div class="avail-meta">${c.color} | Size: ${c.size} | ₹${c.price.toLocaleString('en-IN')}</div>
-                    <div class="avail-status ${available ? 'available' : 'unavailable'}">
-                        ${available ? '✅ Available' : `❌ Booked${conflictCustomer ? ' by ' + conflictCustomer.name : ''} (${conflict ? conflict.bookingId : ''})`}
+                    <div class="avail-card-header">
+                        ${imgThumb}
+                        <div class="avail-card-info">
+                            <div class="avail-name">${c.name}</div>
+                            <div class="avail-meta">
+                                <span><i class="fas fa-palette"></i> ${c.color}</span> • 
+                                <span><i class="fas fa-ruler-horizontal"></i> ${c.size}</span>
+                            </div>
+                            <div class="avail-price">₹${c.price.toLocaleString('en-IN')}<small>/event</small></div>
+                        </div>
                     </div>
-                    ${available ? `<button class="btn btn-primary btn-sm" onclick="quickBookWithDate(${c.id}, '${eventDate}')">
-                        <i class="fas fa-bookmark"></i> Book Now
+                    <div class="avail-status ${available ? 'available' : 'unavailable'}">
+                        ${available ? '<i class="fas fa-circle-check"></i> Available for this date' : `<i class="fas fa-circle-xmark"></i> Booked${conflictCustomer ? ' by ' + conflictCustomer.name : ''} (${conflict ? conflict.bookingId : ''})`}
+                    </div>
+                    ${available ? `<button class="btn btn-primary btn-sm" style="width:100%;margin-top:10px;justify-content:center;" onclick="quickBookWithDate(${c.id}, '${eventDate}')">
+                        <i class="fas fa-bookmark"></i> Book This Choli
                     </button>` : ''}
                 </div>`;
             }).join('')}
@@ -1111,17 +1185,42 @@ function showConfirm(message, onYes) {
 
 // ==================== SEED DEMO DATA & RESET ====================
 
+const SAMPLE_CHOLI_IMAGES = [
+    'https://upload.wikimedia.org/wikipedia/commons/d/d1/Ethnic_wear_for_women_Blue_Lehenga.png',
+    'https://upload.wikimedia.org/wikipedia/commons/0/0f/Close-up_of_a_red_velvet_lehenga_with_intricate_gold_embroidery%2C_featuring_a_choli_and_a_flowing_skirt.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/3/31/Lehenga-Choli_%286375587865%29.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/0/05/Gota_Embroidery.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/2/2f/Hasseen2.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/9/9a/Indian_girl_in_Ghagra_Choli.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/4/44/A-store-person-showcases-a-lehenga.jpg',
+    'https://upload.wikimedia.org/wikipedia/commons/1/1c/Lehnga.jpg'
+];
+
+function ensureCholiImages() {
+    let cholis = DB.get('cholis');
+    let updated = false;
+    cholis.forEach((c, idx) => {
+        if (!c.image || c.image.trim() === '') {
+            c.image = SAMPLE_CHOLI_IMAGES[idx % SAMPLE_CHOLI_IMAGES.length];
+            updated = true;
+        }
+    });
+    if (updated) {
+        DB.set('cholis', cholis);
+    }
+}
+
 function seedDemoData(force = false) {
     if (!force && localStorage.getItem('_initialized')) return;
     localStorage.setItem('_initialized', 'true');
 
     const cholis = [
-        { id: 1, name: 'Royal Blue Bridal #101', category: 'Bridal', color: 'Royal Blue', size: 'M', price: 1500, deposit: 500, description: 'Heavy embroidery, silk fabric', image: '', createdAt: '2026-01-01' },
-        { id: 2, name: 'Red Zari Work #102', category: 'Bridal', color: 'Red', size: 'S', price: 1200, deposit: 400, description: 'Zari embroidery, velvet', image: '', createdAt: '2026-01-01' },
-        { id: 3, name: 'Pink Sequin Party #103', category: 'Party Wear', color: 'Pink', size: 'L', price: 800, deposit: 200, description: 'Sequin work, georgette', image: '', createdAt: '2026-02-01' },
-        { id: 4, name: 'Golden Festive #104', category: 'Festive', color: 'Golden', size: 'M', price: 1000, deposit: 300, description: 'Golden thread work, art silk', image: '', createdAt: '2026-02-15' },
-        { id: 5, name: 'Maroon Designer #105', category: 'Designer', color: 'Maroon', size: 'XL', price: 2000, deposit: 700, description: 'Designer piece, hand embroidery', image: '', createdAt: '2026-03-01' },
-        { id: 6, name: 'Green Traditional #106', category: 'Traditional', color: 'Green', size: 'Free', price: 600, deposit: 200, description: 'Mirror work, cotton silk', image: '', createdAt: '2026-03-15' },
+        { id: 1, name: 'Royal Blue Zari Bridal #101', category: 'Bridal', color: 'Royal Blue', size: 'M', price: 1500, deposit: 500, description: 'Heavy zari embroidery, silk fabric with rich dupatta', image: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/Ethnic_wear_for_women_Blue_Lehenga.png', createdAt: '2026-01-01' },
+        { id: 2, name: 'Crimson Red Velvet Bridal #102', category: 'Bridal', color: 'Crimson Red', size: 'S', price: 1800, deposit: 600, description: 'Pure velvet with intricate golden zardozi work', image: 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Close-up_of_a_red_velvet_lehenga_with_intricate_gold_embroidery%2C_featuring_a_choli_and_a_flowing_skirt.jpg', createdAt: '2026-01-01' },
+        { id: 3, name: 'Rose Pink & Maroon Designer #103', category: 'Party Wear', color: 'Rose Pink', size: 'L', price: 1200, deposit: 400, description: 'Modern fusion lehenga choli with sequin accents', image: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Lehenga-Choli_%286375587865%29.jpg', createdAt: '2026-02-01' },
+        { id: 4, name: 'Golden Festive Gota Patti #104', category: 'Festive', color: 'Golden Yellow', size: 'M', price: 1100, deposit: 350, description: 'Traditional Rajasthani gota patti hand embroidery', image: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Gota_Embroidery.jpg', createdAt: '2026-02-15' },
+        { id: 5, name: 'Heritage Maroon Silk #105', category: 'Designer', color: 'Maroon', size: 'XL', price: 2200, deposit: 800, description: 'Royal heritage silk piece with heavy artisan borders', image: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Hasseen2.jpg', createdAt: '2026-03-01' },
+        { id: 6, name: 'Navratri Gujarati Mirror Work #106', category: 'Traditional', color: 'Multicolor Green', size: 'Free', price: 850, deposit: 250, description: 'Authentic Kutch mirror work and festive flared gagra', image: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Indian_girl_in_Ghagra_Choli.jpg', createdAt: '2026-03-15' },
     ];
     localStorage.setItem('cholis_counter', '6');
 
@@ -1134,8 +1233,8 @@ function seedDemoData(force = false) {
 
     const bookings = [
         { bookingId: 'BK0001', customerId: 1, choliId: 1, eventDate: '2026-10-30', pickupDate: '2026-10-29', returnDate: '2026-10-31', amount: 1500, deposit: 500, advance: 500, paymentMode: 'UPI', notes: 'Wedding function', status: 'completed', pickedUp: true, returned: true, createdAt: '2026-10-25', actualPickupDate: '2026-10-29', actualReturnDate: '2026-10-31' },
-        { bookingId: 'BK0002', customerId: 2, choliId: 3, eventDate: '2026-11-01', pickupDate: '2026-10-31', returnDate: '2026-11-02', amount: 800, deposit: 200, advance: 300, paymentMode: 'Cash', notes: 'Diwali party', status: 'active', pickedUp: true, returned: false, createdAt: '2026-10-28' },
-        { bookingId: 'BK0003', customerId: 3, choliId: 5, eventDate: '2026-11-05', pickupDate: '2026-11-04', returnDate: '2026-11-06', amount: 2000, deposit: 700, advance: 1000, paymentMode: 'UPI', notes: 'Engagement ceremony', status: 'upcoming', pickedUp: false, returned: false, createdAt: '2026-10-30' },
+        { bookingId: 'BK0002', customerId: 2, choliId: 3, eventDate: '2026-11-01', pickupDate: '2026-10-31', returnDate: '2026-11-02', amount: 1200, deposit: 400, advance: 500, paymentMode: 'Cash', notes: 'Reception party', status: 'active', pickedUp: true, returned: false, createdAt: '2026-10-28' },
+        { bookingId: 'BK0003', customerId: 3, choliId: 5, eventDate: '2026-11-05', pickupDate: '2026-11-04', returnDate: '2026-11-06', amount: 2200, deposit: 800, advance: 1000, paymentMode: 'UPI', notes: 'Engagement ceremony', status: 'upcoming', pickedUp: false, returned: false, createdAt: '2026-10-30' },
     ];
     localStorage.setItem('bookings_counter', '3');
 
@@ -1364,6 +1463,9 @@ function init() {
 
     // Seed demo data on first run
     seedDemoData();
+
+    // Ensure images exist for all demo/existing cholis
+    ensureCholiImages();
 
     // Try auto-reconnect to Firebase Cloud Sync
     initCloudSyncFromStorage();

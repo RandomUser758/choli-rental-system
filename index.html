@@ -14,8 +14,8 @@
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <i class="fas fa-vest"></i>
-                <span>Choli Rental</span>
+                <i class="fas fa-crown" style="color:#FBBF24;"></i>
+                <span>Choli Boutique</span>
             </div>
         </div>
         <ul class="nav-links">
@@ -70,6 +70,29 @@
 
             <!-- ==================== DASHBOARD PAGE ==================== -->
             <section class="page active" id="page-dashboard">
+                <!-- Boutique Hero Banner -->
+                <div class="hero-banner">
+                    <div class="hero-content">
+                        <span class="hero-badge"><i class="fas fa-crown"></i> Bridal & Partywear Collection</span>
+                        <h1>Choli & Lehenga Rental Studio</h1>
+                        <p>Track bookings, check live availability, and manage your boutique collection with ease.</p>
+                        <div class="hero-actions">
+                            <button class="btn btn-gold" onclick="openNewBooking()">
+                                <i class="fas fa-calendar-plus"></i> New Booking
+                            </button>
+                            <button class="btn btn-hero-outline" onclick="navigateTo('availability')">
+                                <i class="fas fa-calendar-check"></i> Check Availability
+                            </button>
+                            <button class="btn btn-hero-outline" onclick="openModal('addCholiModal')">
+                                <i class="fas fa-plus"></i> Add Choli
+                            </button>
+                            <button class="btn btn-hero-outline" onclick="navigateTo('inventory')">
+                                <i class="fas fa-boxes-stacked"></i> View Inventory
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="stats-grid">
                     <div class="stat-card stat-primary">
                         <div class="stat-icon"><i class="fas fa-boxes-stacked"></i></div>
@@ -533,8 +556,37 @@
                         <textarea id="choliDesc" rows="2" placeholder="Embroidery details, fabric, etc."></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Image URL (optional)</label>
-                        <input type="text" id="choliImage" placeholder="Paste image URL or leave blank">
+                        <label>Choli Photo</label>
+                        <div class="image-upload-wrapper">
+                            <div class="image-preview-box" id="choliPreviewBox">
+                                <div style="text-align:center;">
+                                    <i class="fas fa-camera" style="font-size:1.8rem;color:var(--text-light);opacity:0.6;"></i>
+                                    <div style="font-size:0.75rem;color:var(--text-light);margin-top:4px;">No photo selected</div>
+                                </div>
+                            </div>
+                            <div class="image-upload-controls">
+                                <label class="btn btn-secondary btn-sm" style="cursor:pointer;width:100%;justify-content:center;margin-bottom:8px;">
+                                    <i class="fas fa-upload"></i> Upload from Device / Camera
+                                    <input type="file" id="choliImageFile" accept="image/*" style="display:none;" onchange="handleCholiImageFile(event)">
+                                </label>
+                                <input type="text" id="choliImage" placeholder="Or paste image URL" oninput="updateCholiImagePreview(this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Quick Presets -->
+                        <div style="margin-top:10px;">
+                            <small style="display:block;margin-bottom:6px;color:var(--text-secondary);font-weight:600;">Or Pick a Sample Photo:</small>
+                            <div class="preset-thumbs">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d1/Ethnic_wear_for_women_Blue_Lehenga.png" title="Royal Blue" onclick="selectPresetImage(this.src)">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/0/0f/Close-up_of_a_red_velvet_lehenga_with_intricate_gold_embroidery%2C_featuring_a_choli_and_a_flowing_skirt.jpg" title="Red Velvet" onclick="selectPresetImage(this.src)">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Lehenga-Choli_%286375587865%29.jpg" title="Rose Pink" onclick="selectPresetImage(this.src)">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Gota_Embroidery.jpg" title="Golden Gota" onclick="selectPresetImage(this.src)">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Hasseen2.jpg" title="Maroon Silk" onclick="selectPresetImage(this.src)">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Indian_girl_in_Ghagra_Choli.jpg" title="Navratri Mirror" onclick="selectPresetImage(this.src)">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/A-store-person-showcases-a-lehenga.jpg" title="Designer Boutique" onclick="selectPresetImage(this.src)">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Lehnga.jpg" title="Traditional Flare" onclick="selectPresetImage(this.src)">
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" onclick="closeModal('addCholiModal')">Cancel</button>
