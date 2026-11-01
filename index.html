@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choli Rental Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-vest"></i>
+                <span>Choli Rental</span>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li class="active" data-page="dashboard">
+                <a href="#"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+            </li>
+            <li data-page="inventory">
+                <a href="#"><i class="fas fa-boxes-stacked"></i><span>Inventory</span></a>
+            </li>
+            <li data-page="availability">
+                <a href="#"><i class="fas fa-calendar-check"></i><span>Check Availability</span></a>
+            </li>
+            <li data-page="bookings">
+                <a href="#"><i class="fas fa-bookmark"></i><span>Bookings</span></a>
+            </li>
+            <li data-page="customers">
+                <a href="#"><i class="fas fa-users"></i><span>Customers</span></a>
+            </li>
+            <li data-page="returns">
+                <a href="#"><i class="fas fa-rotate-left"></i><span>Returns</span></a>
+            </li>
+            <li data-page="reports">
+                <a href="#"><i class="fas fa-chart-pie"></i><span>Reports</span></a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2 class="page-title" id="pageTitle">Dashboard</h2>
+            <div class="topbar-right">
+                <span class="today-date" id="todayDate"></span>
+            </div>
+        </header>
+
+        <!-- Pages Container -->
+        <div class="pages-container">
+
+            <!-- ==================== DASHBOARD PAGE ==================== -->
+            <section class="page active" id="page-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon"><i class="fas fa-boxes-stacked"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statTotalCholis">0</h3>
+                            <p>Total Cholis</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statAvailable">0</h3>
+                            <p>Available Today</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statRentedOut">0</h3>
+                            <p>Currently Rented</p>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-danger">
+                        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statOverdue">0</h3>
+                            <p>Overdue Returns</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calendar-day"></i> Today's Activity</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="todayPickups" class="activity-section">
+                                <h4>📦 Pickups Today</h4>
+                                <div id="pickupsList" class="activity-list"></div>
+                            </div>
+                            <div id="todayReturns" class="activity-section">
+                                <h4>🔄 Returns Due Today</h4>
+                                <div id="returnsList" class="activity-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-history"></i> Recent Bookings</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="recentBookings" class="activity-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-20">
+                    <div class="card-header">
+                        <h3><i class="fas fa-rupee-sign"></i> Revenue Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="revenue-grid">
+                            <div class="revenue-item">
+                                <span class="revenue-label">This Month</span>
+                                <span class="revenue-value" id="revenueMonth">₹0</span>
+                            </div>
+                            <div class="revenue-item">
+                                <span class="revenue-label">Total Revenue</span>
+                                <span class="revenue-value" id="revenueTotal">₹0</span>
+                            </div>
+                            <div class="revenue-item">
+                                <span class="revenue-label">Total Bookings</span>
+                                <span class="revenue-value" id="totalBookingsCount">0</span>
+                            </div>
+                            <div class="revenue-item">
+                                <span class="revenue-label">Pending Amount</span>
+                                <span class="revenue-value text-danger" id="pendingAmount">₹0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== INVENTORY PAGE ==================== -->
+            <section class="page" id="page-inventory">
+                <div class="page-actions">
+                    <button class="btn btn-primary" onclick="openModal('addCholiModal')">
+                        <i class="fas fa-plus"></i> Add New Choli
+                    </button>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="inventorySearch" placeholder="Search cholis..." oninput="renderInventory()">
+                    </div>
+                </div>
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-filter="all" onclick="filterInventory('all', this)">All</button>
+                    <button class="filter-btn" data-filter="available" onclick="filterInventory('available', this)">Available</button>
+                    <button class="filter-btn" data-filter="rented" onclick="filterInventory('rented', this)">Rented</button>
+                </div>
+                <div class="inventory-grid" id="inventoryGrid"></div>
+            </section>
+
+            <!-- ==================== AVAILABILITY PAGE ==================== -->
+            <section class="page" id="page-availability">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-calendar-check"></i> Check Choli Availability</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="info-text">
+                            <i class="fas fa-info-circle"></i>
+                            Enter the <strong>event date</strong>. The choli will be blocked from
+                            <strong>1 day before</strong> (pickup) to <strong>1 day after</strong> (return).
+                        </p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Event Date</label>
+                                <input type="date" id="availEventDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Search Choli (optional)</label>
+                                <input type="text" id="availSearchCholi" placeholder="Name, color, or size...">
+                            </div>
+                            <div class="form-group" style="align-self: flex-end;">
+                                <button class="btn btn-primary" onclick="checkAvailability()">
+                                    <i class="fas fa-search"></i> Check Availability
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="availabilityResults" class="mt-20"></div>
+            </section>
+
+            <!-- ==================== BOOKINGS PAGE ==================== -->
+            <section class="page" id="page-bookings">
+                <div class="page-actions">
+                    <button class="btn btn-primary" onclick="openNewBooking()">
+                        <i class="fas fa-plus"></i> New Booking
+                    </button>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="bookingSearch" placeholder="Search bookings..." oninput="renderBookings()">
+                    </div>
+                </div>
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-bfilter="all" onclick="filterBookings('all', this)">All</button>
+                    <button class="filter-btn" data-bfilter="upcoming" onclick="filterBookings('upcoming', this)">Upcoming</button>
+                    <button class="filter-btn" data-bfilter="active" onclick="filterBookings('active', this)">Active</button>
+                    <button class="filter-btn" data-bfilter="completed" onclick="filterBookings('completed', this)">Completed</button>
+                    <button class="filter-btn" data-bfilter="cancelled" onclick="filterBookings('cancelled', this)">Cancelled</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="bookingsTable">
+                        <thead>
+                            <tr>
+                                <th>Booking ID</th>
+                                <th>Customer</th>
+                                <th>Choli</th>
+                                <th>Event Date</th>
+                                <th>Pickup</th>
+                                <th>Return By</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ==================== CUSTOMERS PAGE ==================== -->
+            <section class="page" id="page-customers">
+                <div class="page-actions">
+                    <button class="btn btn-primary" onclick="openModal('addCustomerModal')">
+                        <i class="fas fa-plus"></i> Add Customer
+                    </button>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="customerSearch" placeholder="Search customers..." oninput="renderCustomers()">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Address</th>
+                                <th>Total Bookings</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customersBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ==================== RETURNS PAGE ==================== -->
+            <section class="page" id="page-returns">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-rotate-left"></i> Pending Returns</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Booking ID</th>
+                                        <th>Customer</th>
+                                        <th>Choli</th>
+                                        <th>Event Date</th>
+                                        <th>Return Due</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="returnsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== REPORTS PAGE ==================== -->
+            <section class="page" id="page-reports">
+                <div class="reports-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> Monthly Revenue</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="monthlyRevenueChart" class="chart-container"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-fire"></i> Most Popular Cholis</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="popularCholis" class="popular-list"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-users"></i> Top Customers</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="topCustomers" class="popular-list"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-list"></i> All Transactions</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row" style="margin-bottom:15px;">
+                                <div class="form-group">
+                                    <label>From</label>
+                                    <input type="date" id="reportFrom">
+                                </div>
+                                <div class="form-group">
+                                    <label>To</label>
+                                    <input type="date" id="reportTo">
+                                </div>
+                                <div class="form-group" style="align-self:flex-end;">
+                                    <button class="btn btn-primary" onclick="generateReport()">Generate</button>
+                                </div>
+                            </div>
+                            <div id="reportResults"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Add Choli Modal -->
+    <div class="modal-overlay" id="addCholiModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="choliModalTitle">Add New Choli</h3>
+                <button class="modal-close" onclick="closeModal('addCholiModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="choliForm" onsubmit="saveCholi(event)">
+                    <input type="hidden" id="choliEditId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Choli Name / Code *</label>
+                            <input type="text" id="choliName" required placeholder="e.g., Royal Blue Bridal #101">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="choliCategory">
+                                <option value="Bridal">Bridal</option>
+                                <option value="Party Wear">Party Wear</option>
+                                <option value="Festive">Festive</option>
+                                <option value="Designer">Designer</option>
+                                <option value="Traditional">Traditional</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Color *</label>
+                            <input type="text" id="choliColor" required placeholder="e.g., Royal Blue">
+                        </div>
+                        <div class="form-group">
+                            <label>Size *</label>
+                            <select id="choliSize" required>
+                                <option value="">Select Size</option>
+                                <option value="XS">XS (28-30)</option>
+                                <option value="S">S (30-32)</option>
+                                <option value="M">M (32-34)</option>
+                                <option value="L">L (34-36)</option>
+                                <option value="XL">XL (36-38)</option>
+                                <option value="XXL">XXL (38-40)</option>
+                                <option value="Free">Free Size</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Rent Price (₹) *</label>
+                            <input type="number" id="choliPrice" required min="0" placeholder="e.g., 500">
+                        </div>
+                        <div class="form-group">
+                            <label>Security Deposit (₹)</label>
+                            <input type="number" id="choliDeposit" min="0" value="0" placeholder="e.g., 200">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="choliDesc" rows="2" placeholder="Embroidery details, fabric, etc."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Image URL (optional)</label>
+                        <input type="text" id="choliImage" placeholder="Paste image URL or leave blank">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addCholiModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Choli</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div class="modal-overlay" id="addCustomerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="customerModalTitle">Add New Customer</h3>
+                <button class="modal-close" onclick="closeModal('addCustomerModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm" onsubmit="saveCustomer(event)">
+                    <input type="hidden" id="custEditId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="custName" required placeholder="Customer name">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone *</label>
+                            <input type="tel" id="custPhone" required placeholder="10-digit number">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="custEmail" placeholder="email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea id="custAddress" rows="2" placeholder="Full address"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>ID Proof (Aadhar / PAN)</label>
+                        <input type="text" id="custIdProof" placeholder="ID number for reference">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addCustomerModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Customer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Booking Modal -->
+    <div class="modal-overlay" id="newBookingModal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3>New Booking</h3>
+                <button class="modal-close" onclick="closeModal('newBookingModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="bookingForm" onsubmit="saveBooking(event)">
+                    <input type="hidden" id="bookingEditId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Customer *</label>
+                            <select id="bookingCustomer" required>
+                                <option value="">Select Customer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="visibility:hidden">.</label>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('newBookingModal'); openModal('addCustomerModal');">
+                                <i class="fas fa-plus"></i> New Customer
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Event Date *</label>
+                            <input type="date" id="bookingEventDate" required onchange="updateBookingDates()">
+                        </div>
+                        <div class="form-group">
+                            <label>Pickup Date</label>
+                            <input type="date" id="bookingPickupDate" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Return Date</label>
+                            <input type="date" id="bookingReturnDate" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Choli *</label>
+                        <select id="bookingCholi" required onchange="updateBookingAmount()">
+                            <option value="">Select a Choli</option>
+                        </select>
+                        <small class="choli-availability-hint" id="choliAvailHint"></small>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Rent Amount (₹)</label>
+                            <input type="number" id="bookingAmount" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Deposit (₹)</label>
+                            <input type="number" id="bookingDeposit" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Advance Paid (₹)</label>
+                            <input type="number" id="bookingAdvance" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Mode</label>
+                        <select id="bookingPayMode">
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Card">Card</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="bookingNotes" rows="2" placeholder="Any special instructions..."></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('newBookingModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Details Modal -->
+    <div class="modal-overlay" id="bookingDetailsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Booking Details</h3>
+                <button class="modal-close" onclick="closeModal('bookingDetailsModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="bookingDetailsContent"></div>
+        </div>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div class="modal-overlay" id="confirmDialog">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirm</h3>
+                <button class="modal-close" onclick="closeModal('confirmDialog')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('confirmDialog')">Cancel</button>
+                <button class="btn btn-danger" id="confirmYesBtn" onclick="">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
