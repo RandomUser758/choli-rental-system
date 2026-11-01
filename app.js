@@ -12,10 +12,16 @@ const DB = {
     },
     set(key, data) {
         localStorage.setItem(key, JSON.stringify(data));
+        if (window.cloudSync && window.cloudSync.isConnected) {
+            window.cloudSync.saveCollection(key, data);
+        }
     },
     nextId(key) {
         const counter = parseInt(localStorage.getItem(key + '_counter') || '0') + 1;
         localStorage.setItem(key + '_counter', counter);
+        if (window.cloudSync && window.cloudSync.isConnected) {
+            window.cloudSync.saveCounter(key + '_counter', counter);
+        }
         return counter;
     }
 };
@@ -76,7 +82,11 @@ function showToast(message, type = 'success') {
 // ==================== MODAL MANAGEMENT ====================
 
 function openModal(id) {
-    document.getElementById(id).classList.add('active');
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.add('active');
+    if (id === 'syncModal') {
+        updateSyncPageUI();
+    }
 }
 
 function closeModal(id) {
@@ -94,6 +104,7 @@ document.addEventListener('click', (e) => {
 
 let currentFilter = 'all';
 let currentBookingFilter = 'all';
+let activePage = 'dashboard';
 
 document.querySelectorAll('.nav-links li').forEach(item => {
     item.addEventListener('click', () => {
@@ -102,14 +113,30 @@ document.querySelectorAll('.nav-links li').forEach(item => {
     });
 });
 
+function refreshCurrentPage() {
+    switch(activePage) {
+        case 'dashboard': refreshDashboard(); break;
+        case 'inventory': renderInventory(); break;
+        case 'availability': checkAvailability(); break;
+        case 'bookings': renderBookings(); break;
+        case 'customers': renderCustomers(); break;
+        case 'returns': renderReturns(); break;
+        case 'reports': renderReports(); break;
+        case 'sync': updateSyncPageUI(); break;
+    }
+}
+
 function navigateTo(page) {
+    activePage = page;
     // Update sidebar
     document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-    document.querySelector(`.nav-links li[data-page="${page}"]`).classList.add('active');
+    const activeNav = document.querySelector(`.nav-links li[data-page="${page}"]`);
+    if (activeNav) activeNav.classList.add('active');
 
     // Update page
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(`page-${page}`).classList.add('active');
+    const targetPage = document.getElementById(`page-${page}`);
+    if (targetPage) targetPage.classList.add('active');
 
     // Update title
     const titles = {
@@ -119,19 +146,13 @@ function navigateTo(page) {
         bookings: 'Bookings',
         customers: 'Customers',
         returns: 'Returns',
-        reports: 'Reports'
+        reports: 'Reports',
+        sync: 'Multi-Device Sync & Backup'
     };
     document.getElementById('pageTitle').textContent = titles[page] || page;
 
     // Refresh page data
-    switch(page) {
-        case 'dashboard': refreshDashboard(); break;
-        case 'inventory': renderInventory(); break;
-        case 'bookings': renderBookings(); break;
-        case 'customers': renderCustomers(); break;
-        case 'returns': renderReturns(); break;
-        case 'reports': renderReports(); break;
-    }
+    refreshCurrentPage();
 
     // Close sidebar on mobile
     document.getElementById('sidebar').classList.remove('open');
@@ -1122,6 +1143,192 @@ function seedDemoData() {
     DB.set('bookings', bookings);
 }
 
+// ==================== MULTI-DEVICE SYNC & BACKUP ====================
+
+async function initCloudSyncFromStorage() {
+    const savedConfig = localStorage.getItem('_firebaseConfig');
+    const savedStoreId = localStorage.getItem('_storeId');
+
+    if (savedConfig && savedStoreId && window.cloudSync) {
+        try {
+            await window.cloudSync.init(savedConfig, savedStoreId, true);
+        } catch (e) {
+            console.warn('Auto cloud sync failed:', e);
+        }
+    } else if (window.cloudSync) {
+        window.cloudSync._updateSyncUI('disconnected');
+    }
+}
+
+async function handleConnectCloudSync(e) {
+    if (e) e.preventDefault();
+    const storeId = document.getElementById('syncStoreId').value.trim();
+    const configRaw = document.getElementById('syncFirebaseConfig').value.trim();
+
+    if (!storeId) {
+        showToast('Please enter a Store / Sync ID', 'error');
+        return;
+    }
+    if (!configRaw) {
+        showToast('Please paste your Firebase configuration JSON', 'error');
+        return;
+    }
+
+    let config;
+    try {
+        config = JSON.parse(configRaw);
+    } catch (err) {
+        // Try loose format (key: "val")
+        try {
+            const sanitized = configRaw
+                .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2": ')
+                .replace(/'/g, '"');
+            config = JSON.parse(sanitized);
+        } catch (e) {
+            showToast('Invalid Firebase configuration format. Please provide valid JSON.', 'error');
+            return;
+        }
+    }
+
+    showToast('Connecting to Firebase Cloud...', 'info');
+    const success = await window.cloudSync.init(config, storeId, true);
+
+    if (success) {
+        showToast('🎉 Connected! Real-time multi-device sync is now ACTIVE.', 'success');
+        closeModal('syncModal');
+        updateSyncPageUI();
+        refreshCurrentPage();
+    } else {
+        showToast('Failed to connect to Firebase. Please check your credentials.', 'error');
+    }
+}
+
+function handleDisconnectCloudSync() {
+    showConfirm('Disconnect from Cloud Sync? Your local data will remain safe on this device.', () => {
+        if (window.cloudSync) {
+            window.cloudSync.disconnect();
+        }
+        updateSyncPageUI();
+        refreshCurrentPage();
+    });
+}
+
+async function handleForceUpload() {
+    if (!window.cloudSync || !window.cloudSync.isConnected) {
+        showToast('Please connect to Cloud Sync first!', 'warning');
+        return;
+    }
+    showToast('Uploading this device data to cloud...', 'info');
+    await window.cloudSync.uploadAll();
+}
+
+async function handleForceDownload() {
+    if (!window.cloudSync || !window.cloudSync.isConnected) {
+        showToast('Please connect to Cloud Sync first!', 'warning');
+        return;
+    }
+    showConfirm('Download and replace data from cloud with the latest cloud copy?', async () => {
+        showToast('Downloading cloud data...', 'info');
+        await window.cloudSync.downloadAll();
+    });
+}
+
+// ---- Offline JSON Backup & Restore ----
+
+function exportDataJSON() {
+    const backup = {
+        app: 'CholiRentalManager',
+        exportedAt: new Date().toISOString(),
+        cholis: DB.get('cholis'),
+        customers: DB.get('customers'),
+        bookings: DB.get('bookings'),
+        counters: {
+            cholis_counter: localStorage.getItem('cholis_counter') || '0',
+            customers_counter: localStorage.getItem('customers_counter') || '0',
+            bookings_counter: localStorage.getItem('bookings_counter') || '0',
+        }
+    };
+
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backup, null, 2));
+    const dlAnchorElem = document.createElement('a');
+    dlAnchorElem.setAttribute('href', dataStr);
+    const dateStr = todayStr();
+    dlAnchorElem.setAttribute('download', `choli_rental_backup_${dateStr}.json`);
+    dlAnchorElem.click();
+    showToast('Backup file downloaded! 📥 Keep it safe or send to your other device.', 'success');
+}
+
+function importDataJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data.cholis && !data.customers && !data.bookings) {
+                showToast('Invalid backup file format.', 'error');
+                return;
+            }
+
+            showConfirm(`Restore backup? This contains ${data.cholis ? data.cholis.length : 0} cholis, ${data.customers ? data.customers.length : 0} customers, and ${data.bookings ? data.bookings.length : 0} bookings.`, () => {
+                if (data.cholis) DB.set('cholis', data.cholis);
+                if (data.customers) DB.set('customers', data.customers);
+                if (data.bookings) DB.set('bookings', data.bookings);
+
+                if (data.counters) {
+                    if (data.counters.cholis_counter) localStorage.setItem('cholis_counter', data.counters.cholis_counter);
+                    if (data.counters.customers_counter) localStorage.setItem('customers_counter', data.counters.customers_counter);
+                    if (data.counters.bookings_counter) localStorage.setItem('bookings_counter', data.counters.bookings_counter);
+                }
+
+                showToast('✅ Data successfully imported and restored!', 'success');
+                refreshCurrentPage();
+                closeModal('syncModal');
+            });
+        } catch (err) {
+            console.error('Error importing JSON:', err);
+            showToast('Failed to parse backup file.', 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function updateSyncPageUI() {
+    const savedConfig = localStorage.getItem('_firebaseConfig');
+    const savedStoreId = localStorage.getItem('_storeId');
+    const isConnected = window.cloudSync && window.cloudSync.isConnected;
+
+    const storeIdInput = document.getElementById('syncStoreId');
+    const configInput = document.getElementById('syncFirebaseConfig');
+    const storeIdModalInput = document.getElementById('syncStoreIdModal');
+    const configModalInput = document.getElementById('syncFirebaseConfigModal');
+
+    const connectBtn = document.getElementById('syncConnectBtn');
+    const disconnectBtn = document.getElementById('syncDisconnectBtn');
+    const activeStoreBadge = document.getElementById('activeStoreBadge');
+    const syncActionsBox = document.getElementById('syncActionsBox');
+
+    if (storeIdInput && savedStoreId) storeIdInput.value = savedStoreId;
+    if (configInput && savedConfig) configInput.value = savedConfig;
+    if (storeIdModalInput && savedStoreId) storeIdModalInput.value = savedStoreId;
+    if (configModalInput && savedConfig) configModalInput.value = savedConfig;
+
+    if (activeStoreBadge) {
+        if (isConnected) {
+            activeStoreBadge.innerHTML = `<span class="status-badge status-completed"><i class="fas fa-check-circle"></i> Connected to Store: <strong>${savedStoreId}</strong></span>`;
+        } else {
+            activeStoreBadge.innerHTML = `<span class="status-badge status-cancelled"><i class="fas fa-info-circle"></i> Offline (Local Browser Storage Only)</span>`;
+        }
+    }
+
+    if (connectBtn) connectBtn.style.display = isConnected ? 'none' : 'inline-flex';
+    if (disconnectBtn) disconnectBtn.style.display = isConnected ? 'inline-flex' : 'none';
+    if (syncActionsBox) syncActionsBox.style.display = isConnected ? 'block' : 'none';
+    if (window.cloudSync) window.cloudSync._updateSyncUI(isConnected ? 'connected' : 'disconnected');
+}
+
 // ==================== INIT ====================
 
 function init() {
@@ -1134,6 +1341,9 @@ function init() {
 
     // Seed demo data on first run
     seedDemoData();
+
+    // Try auto-reconnect to Firebase Cloud Sync
+    initCloudSyncFromStorage();
 
     // Render dashboard
     refreshDashboard();

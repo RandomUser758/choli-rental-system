@@ -1126,6 +1126,53 @@ body {
     }
 }
 
+/* ============================
+   Sync Status Pill
+   ============================ */
+.sync-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    transition: var(--transition);
+    user-select: none;
+}
+
+.sync-status-pill:hover {
+    background: var(--surface);
+    border-color: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+.sync-status-pill.status-connected {
+    background: var(--success-bg);
+    border-color: #A7F3D0;
+    color: #065F46;
+}
+
+.sync-status-pill.status-syncing {
+    background: var(--warning-bg);
+    border-color: #FDE68A;
+    color: #92400E;
+}
+
+.sync-status-pill.status-error {
+    background: var(--danger-bg);
+    border-color: #FECACA;
+    color: var(--danger);
+}
+
+.sync-status-pill.status-disconnected {
+    background: var(--bg);
+    color: var(--text-secondary);
+}
+
 @media (max-width: 480px) {
     .stats-grid {
         grid-template-columns: 1fr;
@@ -1137,5 +1184,13 @@ body {
 
     .topbar {
         padding: 0 15px;
+    }
+
+    .sync-status-pill span {
+        display: none;
+    }
+
+    .sync-status-pill {
+        padding: 6px 10px;
     }
 }
