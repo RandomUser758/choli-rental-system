@@ -424,7 +424,7 @@
                 </div>
 
                 <!-- Offline Transfer / Backup Section -->
-                <div class="card">
+                <div class="card" style="margin-bottom:20px;">
                     <div class="card-header">
                         <h3><i class="fas fa-file-export"></i> Instant Backup & Transfer (No Setup Required)</h3>
                     </div>
@@ -442,6 +442,26 @@
                                 <i class="fas fa-upload"></i> Restore / Import Backup (.json)
                                 <input type="file" accept=".json" style="display:none;" onchange="importDataJSON(event)">
                             </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Start Fresh / Manage Data Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-trash-can"></i> Manage Data & Start Fresh</h3>
+                    </div>
+                    <div class="card-body">
+                        <p style="margin-bottom:14px;color:var(--text-secondary);font-size:0.88rem;">
+                            Currently seeing sample demo cholis and bookings? Click below to wipe sample records and start entering your real business data, or restore sample data anytime.
+                        </p>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <button class="btn btn-danger" onclick="clearAllData()">
+                                <i class="fas fa-broom"></i> Clear Demo Data & Start Fresh
+                            </button>
+                            <button class="btn btn-secondary" onclick="restoreDemoData()">
+                                <i class="fas fa-rotate"></i> Reload Sample Demo Data
+                            </button>
                         </div>
                     </div>
                 </div>

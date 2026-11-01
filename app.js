@@ -1109,10 +1109,11 @@ function showConfirm(message, onYes) {
     openModal('confirmDialog');
 }
 
-// ==================== SEED DEMO DATA ====================
+// ==================== SEED DEMO DATA & RESET ====================
 
-function seedDemoData() {
-    if (DB.get('cholis').length > 0) return; // already seeded
+function seedDemoData(force = false) {
+    if (!force && localStorage.getItem('_initialized')) return;
+    localStorage.setItem('_initialized', 'true');
 
     const cholis = [
         { id: 1, name: 'Royal Blue Bridal #101', category: 'Bridal', color: 'Royal Blue', size: 'M', price: 1500, deposit: 500, description: 'Heavy embroidery, silk fabric', image: '', createdAt: '2026-01-01' },
@@ -1141,6 +1142,28 @@ function seedDemoData() {
     DB.set('cholis', cholis);
     DB.set('customers', customers);
     DB.set('bookings', bookings);
+}
+
+function clearAllData() {
+    showConfirm('Clear all sample demo data so you can start entering your real cholis?', () => {
+        DB.set('cholis', []);
+        DB.set('customers', []);
+        DB.set('bookings', []);
+        localStorage.setItem('cholis_counter', '0');
+        localStorage.setItem('customers_counter', '0');
+        localStorage.setItem('bookings_counter', '0');
+        localStorage.setItem('_initialized', 'true');
+        showToast('All demo data cleared! You are ready to add your real cholis.', 'info');
+        refreshCurrentPage();
+    });
+}
+
+function restoreDemoData() {
+    showConfirm('Restore sample demo cholis, customers, and bookings?', () => {
+        seedDemoData(true);
+        showToast('Sample demo data restored!', 'success');
+        refreshCurrentPage();
+    });
 }
 
 // ==================== MULTI-DEVICE SYNC & BACKUP ====================
