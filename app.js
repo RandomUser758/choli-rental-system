@@ -272,8 +272,6 @@ function editCholi(id) {
     updateCholiImagePreview(choli.image || '');
     openModal('addCholiModal');
 }
-    openModal('addCholiModal');
-}
 
 function deleteCholi(id) {
     showConfirm('Delete this choli from inventory?', () => {
