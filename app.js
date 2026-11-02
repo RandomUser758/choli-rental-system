@@ -1468,18 +1468,25 @@ function updateSyncPageUI() {
 // ==================== INIT ====================
 
 function init() {
+    // Check if fresh start is requested
+    if (!localStorage.getItem('_fresh_start_v2')) {
+        localStorage.setItem('_fresh_start_v2', 'true');
+        localStorage.setItem('_fresh_start_needed', 'true');
+        localStorage.setItem('_initialized', 'true');
+        localStorage.setItem('cholis', '[]');
+        localStorage.setItem('customers', '[]');
+        localStorage.setItem('bookings', '[]');
+        localStorage.setItem('cholis_counter', '0');
+        localStorage.setItem('customers_counter', '0');
+        localStorage.setItem('bookings_counter', '0');
+    }
+
     // Set today's date in topbar
     document.getElementById('todayDate').textContent = formatDate(todayStr());
 
     // Set default dates for availability check
     const availDateInput = document.getElementById('availEventDate');
     if (availDateInput) availDateInput.value = todayStr();
-
-    // Seed demo data on first run
-    seedDemoData();
-
-    // Ensure images exist for all demo/existing cholis
-    ensureCholiImages();
 
     // Try auto-reconnect to Firebase Cloud Sync
     initCloudSyncFromStorage();

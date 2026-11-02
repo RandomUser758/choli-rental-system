@@ -68,14 +68,18 @@ class CloudSync {
             console.log('☁️ Multi-Device Cloud Sync connected for Store ID:', this.storeId);
 
             if (autoSync) {
-                // Check if cloud has data; if not, upload local. If yes, compare timestamps or prompt.
-                const hasCloud = await this.hasCloudData();
-                const hasLocal = (JSON.parse(localStorage.getItem('cholis') || '[]').length > 0);
-
-                if (!hasCloud && hasLocal) {
+                if (localStorage.getItem('_fresh_start_needed') === 'true') {
+                    localStorage.removeItem('_fresh_start_needed');
                     await this.uploadAll();
-                } else if (hasCloud) {
-                    await this.downloadAll();
+                } else {
+                    const hasCloud = await this.hasCloudData();
+                    const hasLocal = (JSON.parse(localStorage.getItem('cholis') || '[]').length > 0);
+
+                    if (!hasCloud && hasLocal) {
+                        await this.uploadAll();
+                    } else if (hasCloud) {
+                        await this.downloadAll();
+                    }
                 }
             }
 
