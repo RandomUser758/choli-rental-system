@@ -40,9 +40,6 @@
             <li data-page="reports">
                 <a href="#"><i class="fas fa-chart-pie"></i><span>Reports</span></a>
             </li>
-            <li data-page="sync">
-                <a href="#"><i class="fas fa-cloud"></i><span>Sync & Backup</span></a>
-            </li>
         </ul>
     </nav>
 
@@ -55,12 +52,6 @@
             </button>
             <h2 class="page-title" id="pageTitle">Dashboard</h2>
             <div class="topbar-right">
-                <div id="syncStatus" class="sync-status-pill status-disconnected" onclick="openModal('syncModal')" title="Click for Multi-Device Sync settings">
-                    <i class="fas fa-cloud-slash"></i> <span>Local Only</span>
-                </div>
-                <button class="btn btn-secondary btn-sm" onclick="openModal('syncModal')">
-                    <i class="fas fa-mobile-screen-button"></i> Multi-Device
-                </button>
                 <span class="today-date" id="todayDate"></span>
             </div>
         </header>
@@ -372,124 +363,6 @@
                 </div>
             </section>
 
-            <!-- ==================== SYNC & BACKUP PAGE ==================== -->
-            <section class="page" id="page-sync">
-                <div class="card" style="margin-bottom:20px;">
-                    <div class="card-header">
-                        <h3><i class="fas fa-cloud"></i> Multi-Device Cloud Sync (Real-Time)</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="info-text">
-                            <i class="fas fa-info-circle"></i>
-                            Connect with <strong>Firebase Firestore (Free)</strong> to sync your cholis, bookings, and customers across your phone, tablet, and laptop in real-time. Any changes made on one device instantly reflect on all other devices!
-                        </div>
-
-                        <div id="activeStoreBadge" style="margin-bottom:20px;"></div>
-
-                        <form id="cloudSyncForm" onsubmit="handleConnectCloudSync(event)">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Store ID / Sync Name *</label>
-                                    <input type="text" id="syncStoreId" required placeholder="e.g., radha-choli-rentals">
-                                    <small style="color:var(--text-light);font-size:0.75rem;">Use this exact Store ID on all your phones & computers to access the same boutique.</small>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Firebase Config (JSON) *</label>
-                                <textarea id="syncFirebaseConfig" rows="6" placeholder='{
-  "apiKey": "AIzaSy...",
-  "authDomain": "my-store.firebaseapp.com",
-  "projectId": "my-store",
-  "storageBucket": "my-store.appspot.com",
-  "messagingSenderId": "...",
-  "appId": "..."
-}'></textarea>
-                                <small style="color:var(--text-light);font-size:0.75rem;">
-                                    From your Google Firebase Console &gt; Project Settings &gt; General &gt; Your apps &gt; Web SDK snippet.
-                                </small>
-                            </div>
-
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                                <button type="submit" id="syncConnectBtn" class="btn btn-primary">
-                                    <i class="fas fa-bolt"></i> Connect & Start Live Sync
-                                </button>
-                                <button type="button" id="syncDisconnectBtn" class="btn btn-danger" style="display:none;" onclick="handleDisconnectCloudSync()">
-                                    <i class="fas fa-unlink"></i> Disconnect Cloud
-                                </button>
-                            </div>
-                        </form>
-
-                        <div id="syncActionsBox" style="display:none;margin-top:25px;padding-top:20px;border-top:1px solid var(--border);">
-                            <h4 style="margin-bottom:12px;font-size:0.95rem;"><i class="fas fa-arrows-rotate"></i> Manual Synchronization Controls</h4>
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                                <button class="btn btn-secondary btn-sm" onclick="handleForceUpload()">
-                                    <i class="fas fa-cloud-arrow-up"></i> Upload Local Data to Cloud
-                                </button>
-                                <button class="btn btn-secondary btn-sm" onclick="handleForceDownload()">
-                                    <i class="fas fa-cloud-arrow-down"></i> Download Cloud Data to Device
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="mt-20" style="background:var(--bg);padding:16px;border-radius:var(--radius-sm);font-size:0.85rem;line-height:1.6;">
-                            <strong style="display:block;margin-bottom:8px;"><i class="fas fa-lightbulb"></i> How to get free Firebase in 2 minutes:</strong>
-                            <ol style="margin-left:20px;display:flex;flex-direction:column;gap:4px;">
-                                <li>Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--primary);font-weight:600;">console.firebase.google.com</a> (sign in with your Google account).</li>
-                                <li>Click <strong>"Add project"</strong>, name it (e.g. <code>choli-rental</code>) and create it.</li>
-                                <li>In the project, click the <strong>&lt;/&gt; (Web)</strong> icon to register a web app.</li>
-                                <li>Copy the <code>firebaseConfig = { ... }</code> object and paste it above!</li>
-                                <li>In the left sidebar, click <strong>Firestore Database</strong> &gt; <strong>Create Database</strong> (start in Test Mode).</li>
-                                <li>Done! 100% Free forever within Google's generous limits (50,000 reads/day).</li>
-                            </ol>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Offline Transfer / Backup Section -->
-                <div class="card" style="margin-bottom:20px;">
-                    <div class="card-header">
-                        <h3><i class="fas fa-file-export"></i> Instant Backup & Transfer (No Setup Required)</h3>
-                    </div>
-                    <div class="card-body">
-                        <p style="margin-bottom:16px;color:var(--text-secondary);font-size:0.88rem;">
-                            Transfer your data immediately to another device without any cloud setup by downloading a backup file and restoring it on your phone or other browser.
-                        </p>
-
-                        <div style="display:flex;gap:15px;flex-wrap:wrap;">
-                            <button class="btn btn-primary" onclick="exportDataJSON()">
-                                <i class="fas fa-download"></i> Download Full Backup (.json)
-                            </button>
-
-                            <label class="btn btn-secondary" style="cursor:pointer;margin-bottom:0;">
-                                <i class="fas fa-upload"></i> Restore / Import Backup (.json)
-                                <input type="file" accept=".json" style="display:none;" onchange="importDataJSON(event)">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Start Fresh / Manage Data Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-trash-can"></i> Manage Data & Start Fresh</h3>
-                    </div>
-                    <div class="card-body">
-                        <p style="margin-bottom:14px;color:var(--text-secondary);font-size:0.88rem;">
-                            Currently seeing sample demo cholis and bookings? Click below to wipe sample records and start entering your real business data, or restore sample data anytime.
-                        </p>
-                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                            <button class="btn btn-danger" onclick="clearAllData()">
-                                <i class="fas fa-broom"></i> Clear Demo Data & Start Fresh
-                            </button>
-                            <button class="btn btn-secondary" onclick="restoreDemoData()">
-                                <i class="fas fa-rotate"></i> Reload Sample Demo Data
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
         </div>
     </main>
 
@@ -743,58 +616,6 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('confirmDialog')">Cancel</button>
                 <button class="btn btn-danger" id="confirmYesBtn" onclick="">Yes</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Multi-Device Sync Modal -->
-    <div class="modal-overlay" id="syncModal">
-        <div class="modal modal-large">
-            <div class="modal-header">
-                <h3><i class="fas fa-mobile-screen-button"></i> Multi-Device Sync & Backup</h3>
-                <button class="modal-close" onclick="closeModal('syncModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:12px;border-bottom:1px solid var(--border);">
-                    <div id="modalSyncStatus">
-                        <i class="fas fa-cloud-slash" style="color:#64748B;margin-right:6px;"></i><span>Local Only</span>
-                    </div>
-                    <button class="btn btn-secondary btn-sm" onclick="closeModal('syncModal'); navigateTo('sync');">
-                        <i class="fas fa-up-right-from-square"></i> Open Full Sync Guide
-                    </button>
-                </div>
-
-                <div class="info-text" style="font-size:0.8rem;padding:10px 14px;margin-bottom:15px;">
-                    <i class="fas fa-bolt"></i> <strong>Live Sync:</strong> Use the same <strong>Store ID</strong> and <strong>Firebase Config</strong> on all devices (phone, laptop) for real-time synchronization.
-                </div>
-
-                <form onsubmit="handleConnectCloudSync(event)">
-                    <div class="form-group">
-                        <label>Store ID / Sync Name *</label>
-                        <input type="text" id="syncStoreIdModal" placeholder="e.g., radha-choli-rentals" oninput="document.getElementById('syncStoreId').value = this.value;">
-                    </div>
-                    <div class="form-group">
-                        <label>Firebase Config (JSON) *</label>
-                        <textarea id="syncFirebaseConfigModal" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"..."}' oninput="document.getElementById('syncFirebaseConfig').value = this.value;"></textarea>
-                    </div>
-                    <div style="display:flex;gap:10px;justify-content:flex-end;">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('syncModal')">Close</button>
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-cloud"></i> Connect Cloud</button>
-                    </div>
-                </form>
-
-                <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--border);">
-                    <label style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:10px;">Quick Offline Backup & Restore:</label>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button class="btn btn-secondary btn-sm" onclick="exportDataJSON()">
-                            <i class="fas fa-download"></i> Export Backup (.json)
-                        </button>
-                        <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-bottom:0;">
-                            <i class="fas fa-upload"></i> Restore Backup (.json)
-                            <input type="file" accept=".json" style="display:none;" onchange="importDataJSON(event)">
-                        </label>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

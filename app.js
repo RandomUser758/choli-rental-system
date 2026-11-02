@@ -84,13 +84,11 @@ function showToast(message, type = 'success') {
 function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.classList.add('active');
-    if (id === 'syncModal') {
-        updateSyncPageUI();
-    }
 }
 
 function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.remove('active');
 }
 
 // Close modal on outside click
