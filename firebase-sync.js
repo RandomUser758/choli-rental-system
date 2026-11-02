@@ -70,15 +70,15 @@ class CloudSync {
             if (autoSync) {
                 if (localStorage.getItem('_fresh_start_needed') === 'true') {
                     localStorage.removeItem('_fresh_start_needed');
-                    await this.uploadAll();
+                    await this.uploadAll(true);
                 } else {
                     const hasCloud = await this.hasCloudData();
                     const hasLocal = (JSON.parse(localStorage.getItem('cholis') || '[]').length > 0);
 
                     if (!hasCloud && hasLocal) {
-                        await this.uploadAll();
+                        await this.uploadAll(true);
                     } else if (hasCloud) {
-                        await this.downloadAll();
+                        await this.downloadAll(true);
                     }
                 }
             }
@@ -225,7 +225,7 @@ class CloudSync {
     }
 
     // ---- Upload all local data to cloud ----
-    async uploadAll() {
+    async uploadAll(silent = false) {
         if (!this.isConnected) return false;
         this._updateSyncUI('syncing');
 
@@ -254,14 +254,14 @@ class CloudSync {
             );
 
             this._updateSyncUI('connected');
-            if (typeof showToast === 'function') {
+            if (!silent && typeof showToast === 'function') {
                 showToast('Cloud database updated with local data!', 'success');
             }
             return true;
         } catch (err) {
             console.error('Upload all failed:', err);
             this._updateSyncUI('error');
-            if (typeof showToast === 'function') {
+            if (!silent && typeof showToast === 'function') {
                 showToast('Failed to upload data to cloud.', 'error');
             }
             return false;
@@ -269,7 +269,7 @@ class CloudSync {
     }
 
     // ---- Download all cloud data to local ----
-    async downloadAll() {
+    async downloadAll(silent = false) {
         if (!this.isConnected) return false;
         this._updateSyncUI('syncing');
 
@@ -310,7 +310,7 @@ class CloudSync {
             if (typeof refreshCurrentPage === 'function') {
                 refreshCurrentPage();
             }
-            if (typeof showToast === 'function') {
+            if (!silent && typeof showToast === 'function') {
                 showToast('Cloud data downloaded and synced!', 'success');
             }
             return true;
