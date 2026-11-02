@@ -1480,3 +1480,45 @@ body {
         padding: 6px 10px;
     }
 }
+
+/* ============================
+   Guest / Staff Access Mode
+   ============================ */
+body.is-guest [data-admin-only="true"] {
+    display: none !important;
+}
+
+.badge-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #10B981;
+    color: #ffffff;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.pin-input-container {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0 20px 0;
+}
+
+.pin-input {
+    width: 180px;
+    font-size: 1.8rem;
+    letter-spacing: 10px;
+    text-align: center;
+    padding: 10px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-weight: 700;
+    outline: none;
+}
+
+.pin-input:focus {
+    border-color: var(--primary);
+}

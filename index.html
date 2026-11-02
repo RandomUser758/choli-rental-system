@@ -19,25 +19,25 @@
             </div>
         </div>
         <ul class="nav-links">
-            <li class="active" data-page="dashboard">
+            <li data-page="dashboard" data-admin-only="true">
                 <a href="#"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
             </li>
-            <li data-page="inventory">
+            <li class="active" data-page="inventory">
                 <a href="#"><i class="fas fa-boxes-stacked"></i><span>Inventory</span></a>
             </li>
             <li data-page="availability">
                 <a href="#"><i class="fas fa-calendar-check"></i><span>Check Availability</span></a>
             </li>
-            <li data-page="bookings">
+            <li data-page="bookings" data-admin-only="true">
                 <a href="#"><i class="fas fa-bookmark"></i><span>Bookings</span></a>
             </li>
-            <li data-page="customers">
+            <li data-page="customers" data-admin-only="true">
                 <a href="#"><i class="fas fa-users"></i><span>Customers</span></a>
             </li>
-            <li data-page="returns">
+            <li data-page="returns" data-admin-only="true">
                 <a href="#"><i class="fas fa-rotate-left"></i><span>Returns</span></a>
             </li>
-            <li data-page="reports">
+            <li data-page="reports" data-admin-only="true">
                 <a href="#"><i class="fas fa-chart-pie"></i><span>Reports</span></a>
             </li>
         </ul>
@@ -50,7 +50,8 @@
             <button class="menu-toggle" id="menuToggle">
                 <i class="fas fa-bars"></i>
             </button>
-            <h2 class="page-title" id="pageTitle">Dashboard</h2>
+            <h2 class="page-title" id="pageTitle">Inventory</h2>
+            <div class="topbar-right" id="topbarAuthBox"></div>
         </header>
 
         <!-- Pages Container -->
@@ -65,13 +66,13 @@
                         <h1>Choli & Lehenga Rental Studio</h1>
                         <p>Track bookings, check live availability, and manage your boutique collection with ease.</p>
                         <div class="hero-actions">
-                            <button class="btn btn-gold" onclick="openNewBooking()">
+                            <button class="btn btn-gold" data-admin-only="true" onclick="openNewBooking()">
                                 <i class="fas fa-calendar-plus"></i> New Booking
                             </button>
                             <button class="btn btn-hero-outline" onclick="navigateTo('availability')">
                                 <i class="fas fa-calendar-check"></i> Check Availability
                             </button>
-                            <button class="btn btn-hero-outline" onclick="openModal('addCholiModal')">
+                            <button class="btn btn-hero-outline" data-admin-only="true" onclick="openModal('addCholiModal')">
                                 <i class="fas fa-plus"></i> Add Choli
                             </button>
                             <button class="btn btn-hero-outline" onclick="navigateTo('inventory')">
@@ -168,7 +169,7 @@
             <!-- ==================== INVENTORY PAGE ==================== -->
             <section class="page" id="page-inventory">
                 <div class="page-actions">
-                    <button class="btn btn-primary" onclick="openModal('addCholiModal')">
+                    <button class="btn btn-primary" data-admin-only="true" onclick="openModal('addCholiModal')">
                         <i class="fas fa-plus"></i> Add New Choli
                     </button>
                     <div class="search-box">
@@ -219,7 +220,7 @@
             <!-- ==================== BOOKINGS PAGE ==================== -->
             <section class="page" id="page-bookings">
                 <div class="page-actions">
-                    <button class="btn btn-primary" onclick="openNewBooking()">
+                    <button class="btn btn-primary" data-admin-only="true" onclick="openNewBooking()">
                         <i class="fas fa-plus"></i> New Booking
                     </button>
                     <div class="search-box">
@@ -257,7 +258,7 @@
             <!-- ==================== CUSTOMERS PAGE ==================== -->
             <section class="page" id="page-customers">
                 <div class="page-actions">
-                    <button class="btn btn-primary" onclick="openModal('addCustomerModal')">
+                    <button class="btn btn-primary" data-admin-only="true" onclick="openModal('addCustomerModal')">
                         <i class="fas fa-plus"></i> Add Customer
                     </button>
                     <div class="search-box">
@@ -613,6 +614,61 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('confirmDialog')">Cancel</button>
                 <button class="btn btn-danger" id="confirmYesBtn" onclick="">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Login Modal -->
+    <div class="modal-overlay" id="adminLoginModal">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h3><i class="fas fa-lock"></i> Staff Login</h3>
+                <button class="modal-close" onclick="closeModal('adminLoginModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:18px;text-align:center;">
+                    Enter Boutique Staff PIN to access Bookings, Customers, and Management.
+                </p>
+                <form onsubmit="handleAdminLogin(event)">
+                    <div class="pin-input-container">
+                        <input type="password" id="adminPinInput" class="pin-input" maxlength="6" placeholder="••••" required autocomplete="off">
+                    </div>
+                    <div id="pinErrorMessage" style="color:#EF4444;font-size:0.85rem;text-align:center;margin-bottom:12px;display:none;">
+                        Incorrect PIN. Please try again.
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+                        <i class="fas fa-unlock"></i> Unlock Staff Mode
+                    </button>
+                    <p style="font-size:0.75rem;color:var(--text-light);text-align:center;margin-top:14px;">
+                        Default PIN: <strong>1234</strong>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change PIN Modal -->
+    <div class="modal-overlay" id="changePinModal">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> Change Staff PIN</h3>
+                <button class="modal-close" onclick="closeModal('changePinModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="handleChangePin(event)">
+                    <div class="form-group">
+                        <label>Current PIN *</label>
+                        <input type="password" id="currentPinInput" required placeholder="Enter current PIN">
+                    </div>
+                    <div class="form-group">
+                        <label>New PIN (4 to 6 digits) *</label>
+                        <input type="password" id="newPinInput" required placeholder="Enter new PIN" maxlength="6">
+                    </div>
+                    <div class="modal-footer" style="padding:15px 0 0 0;">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('changePinModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update PIN</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

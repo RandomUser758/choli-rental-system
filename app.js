@@ -125,6 +125,12 @@ function refreshCurrentPage() {
 }
 
 function navigateTo(page) {
+    const adminPages = ['dashboard', 'bookings', 'customers', 'returns', 'reports'];
+    if (!isAdmin() && adminPages.includes(page)) {
+        openAdminLoginModal();
+        return;
+    }
+
     activePage = page;
     // Update sidebar
     document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
@@ -144,8 +150,7 @@ function navigateTo(page) {
         bookings: 'Bookings',
         customers: 'Customers',
         returns: 'Returns',
-        reports: 'Reports',
-        sync: 'Multi-Device Sync & Backup'
+        reports: 'Reports'
     };
     document.getElementById('pageTitle').textContent = titles[page] || page;
 
@@ -351,7 +356,7 @@ function renderInventory() {
                 </div>
                 <div class="choli-card-footer">
                     <div class="choli-price">₹${c.price.toLocaleString('en-IN')} <small>rent</small></div>
-                    <div class="choli-actions">
+                    <div class="choli-actions" data-admin-only="true">
                         <button class="btn btn-primary btn-sm" onclick="quickBook(${c.id})" ${status === 'rented' ? 'disabled style="opacity:0.5"' : ''}>
                             <i class="fas fa-calendar-plus"></i> Book
                         </button>
@@ -439,6 +444,7 @@ function checkAvailability() {
                 const available = isCholiAvailable(c.id, eventDate);
                 const conflict = !available ? getConflictingBooking(c.id, eventDate) : null;
                 const conflictCustomer = conflict ? customers.find(cu => cu.id == conflict.customerId) : null;
+                const conflictInfo = (isAdmin() && conflictCustomer) ? ` by ${conflictCustomer.name} (${conflict ? conflict.bookingId : ''})` : '';
 
                 const imgThumb = c.image
                     ? `<img src="${c.image}" alt="${c.name}" class="avail-card-thumb" onerror="this.style.display='none'">`
@@ -458,9 +464,9 @@ function checkAvailability() {
                         </div>
                     </div>
                     <div class="avail-status ${available ? 'available' : 'unavailable'}">
-                        ${available ? '<i class="fas fa-circle-check"></i> Available for this date' : `<i class="fas fa-circle-xmark"></i> Booked${conflictCustomer ? ' by ' + conflictCustomer.name : ''} (${conflict ? conflict.bookingId : ''})`}
+                        ${available ? '<i class="fas fa-circle-check"></i> Available for this date' : `<i class="fas fa-circle-xmark"></i> Booked${conflictInfo}`}
                     </div>
-                    ${available ? `<button class="btn btn-primary btn-sm" style="width:100%;margin-top:10px;justify-content:center;" onclick="quickBookWithDate(${c.id}, '${eventDate}')">
+                    ${available ? `<button class="btn btn-primary btn-sm" data-admin-only="true" style="width:100%;margin-top:10px;justify-content:center;" onclick="quickBookWithDate(${c.id}, '${eventDate}')">
                         <i class="fas fa-bookmark"></i> Book This Choli
                     </button>` : ''}
                 </div>`;
@@ -1463,6 +1469,114 @@ function updateSyncPageUI() {
     if (window.cloudSync) window.cloudSync._updateSyncUI(isConnected ? 'connected' : 'disconnected');
 }
 
+// ==================== ADMIN & GUEST ACCESS CONTROL ====================
+
+function isAdmin() {
+    return localStorage.getItem('_boutique_admin_auth') === 'true';
+}
+
+function getAdminPin() {
+    return localStorage.getItem('_boutique_admin_pin') || '1234';
+}
+
+function openAdminLoginModal() {
+    const err = document.getElementById('pinErrorMessage');
+    if (err) err.style.display = 'none';
+    const pinInput = document.getElementById('adminPinInput');
+    if (pinInput) pinInput.value = '';
+    openModal('adminLoginModal');
+    setTimeout(() => { if (pinInput) pinInput.focus(); }, 150);
+}
+
+function handleAdminLogin(e) {
+    if (e) e.preventDefault();
+    const pinInput = document.getElementById('adminPinInput');
+    const enteredPin = (pinInput ? pinInput.value : '').trim();
+    const correctPin = getAdminPin();
+
+    if (enteredPin === correctPin) {
+        localStorage.setItem('_boutique_admin_auth', 'true');
+        closeModal('adminLoginModal');
+        showToast('Staff mode unlocked! Welcome back.', 'success');
+        updateAdminUI();
+        navigateTo('dashboard');
+    } else {
+        const err = document.getElementById('pinErrorMessage');
+        if (err) err.style.display = 'block';
+        if (pinInput) {
+            pinInput.value = '';
+            pinInput.focus();
+        }
+    }
+}
+
+function handleAdminLogout() {
+    showConfirm('Lock and exit staff mode? (Switches back to public catalogue mode)', () => {
+        localStorage.removeItem('_boutique_admin_auth');
+        updateAdminUI();
+        navigateTo('inventory');
+        showToast('Staff mode locked. Switched to public catalogue.', 'info');
+    });
+}
+
+function openChangePinModal() {
+    document.getElementById('currentPinInput').value = '';
+    document.getElementById('newPinInput').value = '';
+    openModal('changePinModal');
+}
+
+function handleChangePin(e) {
+    if (e) e.preventDefault();
+    const current = document.getElementById('currentPinInput').value.trim();
+    const newPin = document.getElementById('newPinInput').value.trim();
+    const actual = getAdminPin();
+
+    if (current !== actual) {
+        showToast('Current PIN is incorrect!', 'error');
+        return;
+    }
+    if (newPin.length < 4) {
+        showToast('New PIN must be at least 4 digits!', 'error');
+        return;
+    }
+
+    localStorage.setItem('_boutique_admin_pin', newPin);
+    closeModal('changePinModal');
+    showToast('Staff PIN updated successfully! Keep it safe.', 'success');
+}
+
+function updateAdminUI() {
+    const admin = isAdmin();
+    if (admin) {
+        document.body.classList.remove('is-guest');
+        document.body.classList.add('is-admin');
+    } else {
+        document.body.classList.remove('is-admin');
+        document.body.classList.add('is-guest');
+    }
+
+    const authBox = document.getElementById('topbarAuthBox');
+    if (authBox) {
+        if (admin) {
+            authBox.innerHTML = `
+                <span class="badge-admin"><i class="fas fa-shield-halved"></i> Staff</span>
+                <button class="btn btn-secondary btn-sm" onclick="openChangePinModal()" title="Change Staff PIN">
+                    <i class="fas fa-key"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="handleAdminLogout()" title="Lock / Logout from Staff Mode">
+                    <i class="fas fa-lock"></i> Lock
+                </button>
+            `;
+        } else {
+            authBox.innerHTML = `
+                <button class="btn btn-primary btn-sm" onclick="openAdminLoginModal()">
+                    <i class="fas fa-lock"></i> Staff Login
+                </button>
+            `;
+        }
+    }
+}
+
 // ==================== INIT ====================
 
 function init() {
@@ -1483,11 +1597,18 @@ function init() {
     const availDateInput = document.getElementById('availEventDate');
     if (availDateInput) availDateInput.value = todayStr();
 
+    // Update Admin / Guest state
+    updateAdminUI();
+
     // Try auto-reconnect to Firebase Cloud Sync
     initCloudSyncFromStorage();
 
-    // Render dashboard
-    refreshDashboard();
+    // Route to appropriate initial page
+    if (isAdmin()) {
+        navigateTo('dashboard');
+    } else {
+        navigateTo('inventory');
+    }
 }
 
 // Reset modal titles when opening add modals
