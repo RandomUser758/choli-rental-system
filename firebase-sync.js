@@ -219,9 +219,6 @@ class CloudSync {
         if (typeof refreshCurrentPage === 'function') {
             refreshCurrentPage();
         }
-        if (typeof showToast === 'function') {
-            showToast(`🔄 Synced ${collectionName} from another device!`, 'info');
-        }
     }
 
     // ---- Upload all local data to cloud ----
