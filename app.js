@@ -1479,9 +1479,6 @@ function init() {
         localStorage.setItem('bookings_counter', '0');
     }
 
-    // Set today's date in topbar
-    document.getElementById('todayDate').textContent = formatDate(todayStr());
-
     // Set default dates for availability check
     const availDateInput = document.getElementById('availEventDate');
     if (availDateInput) availDateInput.value = todayStr();
