@@ -1266,8 +1266,22 @@ function restoreDemoData() {
 // ==================== MULTI-DEVICE SYNC & BACKUP ====================
 
 async function initCloudSyncFromStorage() {
-    const savedConfig = localStorage.getItem('_firebaseConfig');
-    const savedStoreId = localStorage.getItem('_storeId');
+    let savedConfig = localStorage.getItem('_firebaseConfig');
+    let savedStoreId = localStorage.getItem('_storeId');
+    const isExplicitlyDisabled = localStorage.getItem('_cloudSyncDisabled') === 'true';
+
+    if (isExplicitlyDisabled) {
+        if (window.cloudSync) window.cloudSync._updateSyncUI('disconnected');
+        return;
+    }
+
+    // Default to the embedded boutique cloud project
+    if (!savedConfig && typeof DEFAULT_FIREBASE_CONFIG !== 'undefined') {
+        savedConfig = JSON.stringify(DEFAULT_FIREBASE_CONFIG);
+        savedStoreId = typeof DEFAULT_STORE_ID !== 'undefined' ? DEFAULT_STORE_ID : 'choli_boutique_main';
+        localStorage.setItem('_firebaseConfig', savedConfig);
+        localStorage.setItem('_storeId', savedStoreId);
+    }
 
     if (savedConfig && savedStoreId && window.cloudSync) {
         try {
@@ -1282,6 +1296,7 @@ async function initCloudSyncFromStorage() {
 
 async function handleConnectCloudSync(e) {
     if (e) e.preventDefault();
+    localStorage.removeItem('_cloudSyncDisabled');
     const storeId = document.getElementById('syncStoreId').value.trim();
     const configRaw = document.getElementById('syncFirebaseConfig').value.trim();
 
@@ -1325,6 +1340,7 @@ async function handleConnectCloudSync(e) {
 
 function handleDisconnectCloudSync() {
     showConfirm('Disconnect from Cloud Sync? Your local data will remain safe on this device.', () => {
+        localStorage.setItem('_cloudSyncDisabled', 'true');
         if (window.cloudSync) {
             window.cloudSync.disconnect();
         }
@@ -1416,8 +1432,8 @@ function importDataJSON(event) {
 }
 
 function updateSyncPageUI() {
-    const savedConfig = localStorage.getItem('_firebaseConfig');
-    const savedStoreId = localStorage.getItem('_storeId');
+    const savedConfig = localStorage.getItem('_firebaseConfig') || (typeof DEFAULT_FIREBASE_CONFIG !== 'undefined' ? JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2) : '');
+    const savedStoreId = localStorage.getItem('_storeId') || (typeof DEFAULT_STORE_ID !== 'undefined' ? DEFAULT_STORE_ID : 'choli_boutique_main');
     const isConnected = window.cloudSync && window.cloudSync.isConnected;
 
     const storeIdInput = document.getElementById('syncStoreId');
@@ -1430,10 +1446,10 @@ function updateSyncPageUI() {
     const activeStoreBadge = document.getElementById('activeStoreBadge');
     const syncActionsBox = document.getElementById('syncActionsBox');
 
-    if (storeIdInput && savedStoreId) storeIdInput.value = savedStoreId;
-    if (configInput && savedConfig) configInput.value = savedConfig;
-    if (storeIdModalInput && savedStoreId) storeIdModalInput.value = savedStoreId;
-    if (configModalInput && savedConfig) configModalInput.value = savedConfig;
+    if (storeIdInput && !storeIdInput.value) storeIdInput.value = savedStoreId;
+    if (configInput && !configInput.value) configInput.value = savedConfig;
+    if (storeIdModalInput && !storeIdModalInput.value) storeIdModalInput.value = savedStoreId;
+    if (configModalInput && !configModalInput.value) configModalInput.value = savedConfig;
 
     if (activeStoreBadge) {
         if (isConnected) {

@@ -3,6 +3,18 @@
    Provides real-time multi-device sync via Firestore
    ============================================================ */
 
+const DEFAULT_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDtjEyVKeqysM-KnoKK-34lGzegCrDqscE",
+    authDomain: "choli-rental-b9ee6.firebaseapp.com",
+    projectId: "choli-rental-b9ee6",
+    storageBucket: "choli-rental-b9ee6.firebasestorage.app",
+    messagingSenderId: "277070288555",
+    appId: "1:277070288555:web:027ff63614775211a249ee",
+    measurementId: "G-HJ52PVKK24"
+};
+
+const DEFAULT_STORE_ID = "choli_boutique_main";
+
 class CloudSync {
     constructor() {
         this.db = null;
